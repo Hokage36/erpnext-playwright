@@ -62,11 +62,12 @@ export default defineConfig({
       ],
   use: {
     baseURL,
-    trace: 'on-first-retry',
+    trace: process.env.CI ? 'on-first-retry' : 'retain-on-failure',
   },
   projects: [
     {
       name: 'setup',
+      testDir: './setup',
       testMatch: /.*\.setup\.ts/,
     },
     ...browserProjects,
