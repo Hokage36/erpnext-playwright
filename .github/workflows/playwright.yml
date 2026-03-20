@@ -1,8 +1,14 @@
 name: ERPNext Playwright CI/CD
 
+run-name: ${{ github.event.inputs.run_label || (github.event.inputs.spec_file && format('Run {0}', github.event.inputs.spec_file)) || 'Run full Playwright suite' }}
+
 on:
   workflow_dispatch:
     inputs:
+      run_label:
+        description: Custom name for this run
+        required: false
+        type: string
       spec_file:
         description: Playwright spec file path, leave empty to run the full suite
         required: false
