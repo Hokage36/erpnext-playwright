@@ -2,6 +2,11 @@ name: ERPNext Playwright CI/CD
 
 on:
   workflow_dispatch:
+    inputs:
+      spec_file:
+        description: Playwright spec file path, leave empty to run the full suite
+        required: false
+        type: string
 
 permissions:
   contents: read
@@ -47,10 +52,17 @@ jobs:
         run: npx playwright install --with-deps chromium
 
       - name: Run Playwright suite
+        shell: bash
         env:
           ERP_USERNAME: ${{ secrets.ERP_USERNAME }}
           ERP_PASSWORD: ${{ secrets.ERP_PASSWORD }}
-        run: npm run test:e2e
+          SPEC_FILE: ${{ github.event.inputs.spec_file }}
+        run: |
+          if [ -n "$SPEC_FILE" ]; then
+            npx playwright test "$SPEC_FILE"
+          else
+            npm run test:e2e
+          fi
 
       - name: Upload Playwright report artifact
         if: ${{ !cancelled() }}
