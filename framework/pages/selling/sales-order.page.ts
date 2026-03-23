@@ -1,6 +1,5 @@
 import { expect, Page } from '@playwright/test';
 
-import { uiText } from '../../data/ui-text';
 import { ErpDocumentPage } from '../erp-document.page';
 
 type SalesOrderData = {
@@ -8,6 +7,7 @@ type SalesOrderData = {
   itemCode: string;
   warehouseName: string;
   quantity: string;
+  rate?: string;
   deliveryDate: string;
 };
 
@@ -17,33 +17,14 @@ export class SalesOrderPage extends ErpDocumentPage {
   }
 
   async gotoNewFromList(): Promise<void> {
-    await this.goto('/app/home');
-    await this.openModule(uiText.modules.sales);
-
-    const salesOrderLinkByHref = this.page.locator('a[href="/app/sales-order"]').first();
-    if (await salesOrderLinkByHref.isVisible().catch(() => false)) {
-      await salesOrderLinkByHref.click();
-    } else {
-      const salesOrderLinkByName = this.page
-        .getByRole('link', { name: '\u0110\u01a1n \u0111\u1eb7t h\u00e0ng' })
-        .nth(1);
-
-      await salesOrderLinkByName.click();
-    }
-
-    const createButton = this.page.locator('.primary-action:visible').first();
-    if (await createButton.isVisible().catch(() => false)) {
-      await this.clickPrimaryAction();
-      return;
-    }
-
-    await this.goto('/app/sales-order/new-sales-order');
-    await expect(this.saveButton()).toBeVisible({ timeout: 15000 });
+    await this.gotoNewDocumentFromList('/app/sales-order/new-sales-order', '/app/sales-order');
   }
 
   async createSalesOrder(data: SalesOrderData): Promise<void> {
     await this.gotoNewFromList();
-    await this.fillAutocompleteField('customer', data.customerName);
+
+    // Customer cung co the thay doi kieu render, nen xu ly rieng giong Purchase Order.
+    await this.fillSalesOrderCustomer(data.customerName);
 
     const deliveryDateInput = this.page.getByRole('textbox').nth(1);
     await expect(deliveryDateInput).toBeVisible();
@@ -67,22 +48,32 @@ export class SalesOrderPage extends ErpDocumentPage {
     await expect(quantityInput).toBeEditable();
     await quantityInput.fill(data.quantity);
 
-    const openRowButton = this.page.locator('.btn-open-row > a').first();
-    await expect(openRowButton).toBeVisible();
-    await openRowButton.click();
+    await this.openFirstGridRow();
+    await this.fillOpenRowAutocompleteField('warehouse', data.warehouseName);
 
-    const openRow = this.page.locator('.grid-row-open').last();
-    await expect(openRow).toBeVisible();
+    if (data.rate) {
+      await this.fillOpenRowInputField('rate', data.rate);
+    }
 
-    const warehouseInput = openRow.locator('[data-fieldname="warehouse"] .input-with-feedback:visible').first();
-    await expect(warehouseInput).toBeVisible();
-    await expect(warehouseInput).toBeEditable();
-    await this.fillAutocomplete(warehouseInput, data.warehouseName);
-
-    const collapseRowButton = this.page.locator('.btn.btn-secondary.btn-sm.pull-right').first();
-    await expect(collapseRowButton).toBeVisible();
-    await collapseRowButton.click();
+    await this.closeOpenGridRow();
 
     await this.saveAndSubmit();
+  }
+
+  private async fillSalesOrderCustomer(customerName: string): Promise<void> {
+    const customerAutocomplete = this.autocompleteField('customer');
+
+    // Truong hop dep nhat: ERPNext render dung autocomplete cua field customer.
+    if (await customerAutocomplete.isVisible().catch(() => false)) {
+      await this.fillAutocomplete(customerAutocomplete, customerName);
+      await customerAutocomplete.press('Tab').catch(() => {});
+      return;
+    }
+
+    // Fallback ve input thuong neu giao dien hien khac di.
+    const customerInput = this.inputField('customer');
+    await this.fillInput(customerInput, customerName);
+    await customerInput.press('Enter').catch(() => {});
+    await customerInput.press('Tab').catch(() => {});
   }
 }
