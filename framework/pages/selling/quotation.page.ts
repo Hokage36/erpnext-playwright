@@ -14,12 +14,12 @@ export class QuotationPage extends ErpDocumentPage {
     super(page);
   }
 
-  async gotoNew(): Promise<void> {
-    await this.goto('/app/quotation/new-quotation');
+  async gotoNewFromList(): Promise<void> {
+    await this.gotoNewDocumentFromList('/app/quotation/new-quotation', '/app/quotation');
   }
 
   async createQuotation(data: QuotationData): Promise<void> {
-    await this.gotoNew();
+    await this.gotoNewFromList();
 
     const customerInput = this.autocompleteField('party_name');
     if (await customerInput.isVisible().catch(() => false)) {
