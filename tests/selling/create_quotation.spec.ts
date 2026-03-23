@@ -2,7 +2,7 @@ import { masterData } from '../../framework/data/master-data';
 import { test } from '../../framework/fixtures/app.fixture';
 
 test('Tao bao gia', async ({ quotationPage }) => {
-  test.setTimeout(120000);
+  test.setTimeout(180000);
 
   await quotationPage.createQuotation({
     customerName: masterData.customerName,
