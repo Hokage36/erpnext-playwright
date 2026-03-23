@@ -1,6 +1,5 @@
 import { Page } from '@playwright/test';
 
-import { uiText } from '../../data/ui-text';
 import { ErpDocumentPage } from '../erp-document.page';
 
 type RequestForQuotationData = {
@@ -17,10 +16,10 @@ export class RequestForQuotationPage extends ErpDocumentPage {
   }
 
   async gotoNewFromList(): Promise<void> {
-    await this.goto('/app/home');
-    await this.openModule(uiText.modules.buying);
-    await this.openSidebarLink('/app/request-for-quotation');
-    await this.clickPrimaryAction();
+    await this.gotoNewDocumentFromList(
+      '/app/request-for-quotation/new-request-for-quotation',
+      '/app/request-for-quotation'
+    );
   }
 
   async createRequestForQuotation(data: RequestForQuotationData): Promise<void> {
