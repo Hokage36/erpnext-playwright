@@ -2,6 +2,7 @@ import { expect, test as base } from '@playwright/test';
 
 import { PurchaseOrderPage } from '../pages/buying/purchase-order.page';
 import { RequestForQuotationPage } from '../pages/buying/request-for-quotation.page';
+import { SupplierPage } from '../pages/buying/supplier.page';
 import { SupplierQuotationPage } from '../pages/buying/supplier-quotation.page';
 import { ErpDocumentPage } from '../pages/erp-document.page';
 import { LoginPage } from '../pages/login.page';
@@ -23,6 +24,7 @@ type AppFixtures = {
   salesOrderPage: SalesOrderPage;
   deliveryNotePage: DeliveryNotePage;
   requestForQuotationPage: RequestForQuotationPage;
+  supplierPage: SupplierPage;
   supplierQuotationPage: SupplierQuotationPage;
   purchaseOrderPage: PurchaseOrderPage;
   itemPage: ItemPage;
@@ -53,6 +55,9 @@ export const test = base.extend<AppFixtures>({
   },
   requestForQuotationPage: async ({ page }, use) => {
     await use(new RequestForQuotationPage(page));
+  },
+  supplierPage: async ({ page }, use) => {
+    await use(new SupplierPage(page));
   },
   supplierQuotationPage: async ({ page }, use) => {
     await use(new SupplierQuotationPage(page));

@@ -1,11 +1,14 @@
 export const masterData = {
   customerName: 'CongTyTnhhVivo',
-  supplierName: 'NhaCungCap1',
+  supplierName: 'MA Inc.',
   itemCode: 'AKS001',
   warehouseName: 'KhoHangPhiaDong01 - AD',
   itemGroup: 'Products',
   stockUom: 'Nos',
+  itemRate: '100000',
   country: 'Vietnam',
+  supplierGroup: 'All Supplier Groups',
+  supplierType: 'Company',
   territoryName: 'All Territories',
   stockEntryType: 'Material Receipt',
   defaultQuantity: '1',
@@ -16,6 +19,10 @@ export const masterData = {
 
 export function buildUniqueCustomerName(): string {
   return `Khach-Hang-${Date.now()}`;
+}
+
+export function buildUniqueSupplierName(): string {
+  return `Nha-Cung-Cap-${Date.now()}`;
 }
 
 export function buildUniqueSalesPartnerName(): string {
