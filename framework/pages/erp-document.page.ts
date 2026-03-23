@@ -27,6 +27,7 @@ export class ErpDocumentPage extends BasePage {
   async save(): Promise<void> {
     const saveButton = this.saveButton();
 
+    await this.dismissMessageDialogIfPresent();
     await expect(saveButton).toBeVisible();
     await expect(saveButton).toBeEnabled();
     await saveButton.click();
@@ -38,6 +39,7 @@ export class ErpDocumentPage extends BasePage {
     const unsavedBadge = this.page.getByText(uiText.common.unsavedLabelPattern).first();
 
     for (let attempt = 0; attempt < attempts; attempt += 1) {
+      await this.dismissMessageDialogIfPresent();
       await expect(saveButton).toBeVisible();
       await expect(saveButton).toBeEnabled();
       await saveButton.click();
@@ -106,18 +108,57 @@ export class ErpDocumentPage extends BasePage {
     await menuItem.click();
   }
 
-  async dismissMessageDialogIfPresent(): Promise<void> {
-    await this.waitForFreezeToClear(15000);
+  // Thu mo document moi truc tiep, neu UI khong cho thi quay ve list va bam Create.
+  protected async gotoNewDocumentFromList(newPath: string, listPath: string): Promise<void> {
+    await this.goto(newPath);
 
-    const msgprintCloseButton = this.page.locator('.modal-dialog.msgprint-dialog .btn.btn-modal-close').first();
-    if (await msgprintCloseButton.isVisible().catch(() => false)) {
-      await msgprintCloseButton.click();
+    if (await this.saveButton().isVisible().catch(() => false)) {
       return;
     }
 
-    const messageDialogCloseButton = this.page.locator('.modal.show .modal-header button:visible').last();
-    if (await messageDialogCloseButton.isVisible().catch(() => false)) {
-      await messageDialogCloseButton.click();
+    await this.goto(listPath);
+
+    if (await this.page.locator('.primary-action:visible').first().isVisible().catch(() => false)) {
+      await this.clickPrimaryAction();
+      return;
+    }
+
+    await this.goto(newPath);
+    await expect(this.saveButton()).toBeVisible({ timeout: 15000 });
+  }
+
+  // Ten document duoc lay tu URL sau khi ERPNext luu thanh cong.
+  currentDocumentName(): string {
+    const currentUrl = new URL(this.page.url());
+    const segments = currentUrl.pathname.split('/').filter(Boolean);
+    const documentName = decodeURIComponent(segments.at(-1) ?? '');
+
+    if (!documentName || documentName.startsWith('new-')) {
+      throw new Error(`Current page URL does not point to a saved document: ${this.page.url()}`);
+    }
+
+    return documentName;
+  }
+
+  // ERPNext hay hien msgprint/modal sau khi save, can dong di de tranh che nut Save/Submit.
+  async dismissMessageDialogIfPresent(): Promise<void> {
+    await this.waitForFreezeToClear(15000);
+
+    const msgprintDialog = this.page.locator('.modal-dialog.msgprint-dialog').first();
+    const msgprintCloseButton = msgprintDialog.locator('.btn.btn-modal-close').first();
+
+    if (await msgprintDialog.isVisible().catch(() => false)) {
+      await msgprintCloseButton.click({ timeout: 2000 }).catch(() => {});
+      await msgprintDialog.waitFor({ state: 'hidden', timeout: 5000 }).catch(() => {});
+      return;
+    }
+
+    const messageDialog = this.page.locator('.modal.show').last();
+    const messageDialogCloseButton = messageDialog.locator('.modal-header button:visible').last();
+
+    if (await messageDialog.isVisible().catch(() => false)) {
+      await messageDialogCloseButton.click({ timeout: 2000 }).catch(() => {});
+      await messageDialog.waitFor({ state: 'hidden', timeout: 5000 }).catch(() => {});
     }
   }
 
@@ -253,6 +294,17 @@ export class ErpDocumentPage extends BasePage {
     await input.press(commitKey);
   }
 
+  protected async readInlineItemGridInputValue(fieldName: string): Promise<string> {
+    let input = this.itemGrid().locator(`[data-fieldname="${fieldName}"] input:visible`).first();
+
+    if (!(await input.isVisible().catch(() => false))) {
+      input = this.page.locator(`[data-fieldname="${fieldName}"] input:visible`).last();
+    }
+
+    await expect(input).toBeVisible();
+    return input.inputValue();
+  }
+
   protected async fillAllVisibleInputFields(
     fieldName: string,
     value: string,
@@ -281,7 +333,14 @@ export class ErpDocumentPage extends BasePage {
   protected async openFirstGridRow(): Promise<void> {
     const itemGrid = this.itemGrid();
     const openRow = itemGrid.locator('.grid-row-open:visible').first();
+    const openModal = this.page.locator('.modal.show:visible').last();
+
+    // Neu row da mo san hoac ERPNext bung row ra modal thi khong mo lai nua.
     if (await openRow.isVisible().catch(() => false)) {
+      return;
+    }
+
+    if (await openModal.isVisible().catch(() => false)) {
       return;
     }
 
@@ -293,13 +352,31 @@ export class ErpDocumentPage extends BasePage {
 
     await expect(openRowButton).toBeVisible();
     await openRowButton.click();
-    await expect(openRow).toBeVisible();
+
+    // Tuy layout ERPNext, row co the mo inline hoac mo bang modal.
+    const openedInlineRow = await openRow.isVisible().catch(() => false);
+    if (openedInlineRow) {
+      return;
+    }
+
+    await expect(openModal).toBeVisible();
   }
 
   protected async closeOpenGridRow(): Promise<void> {
     const itemGrid = this.itemGrid();
     const openRow = itemGrid.locator('.grid-row-open:visible').first();
+    const openModal = this.page.locator('.modal.show:visible').last();
+
+    // Neu ERPNext mo row bang modal thi dong modal thay vi collapse inline row.
     if (!(await openRow.isVisible().catch(() => false))) {
+      if (!(await openModal.isVisible().catch(() => false))) {
+        return;
+      }
+
+      const modalCloseButton = openModal.locator('.modal-header button:visible').last();
+      await expect(modalCloseButton).toBeVisible();
+      await modalCloseButton.click();
+      await expect(openModal).toBeHidden();
       return;
     }
 
@@ -315,6 +392,15 @@ export class ErpDocumentPage extends BasePage {
   }
 
   protected async fillOpenRowAutocompleteField(fieldName: string, value: string): Promise<void> {
+    const openModal = this.page.locator('.modal.show:visible').last();
+    if (await openModal.isVisible().catch(() => false)) {
+      // Uu tien dien vao modal neu ERPNext khong mo inline row.
+      const modalInput = openModal.locator(`[data-fieldname="${fieldName}"] .input-with-feedback:visible`).first();
+      await this.fillAutocomplete(modalInput, value);
+      await modalInput.press('Tab').catch(() => {});
+      return;
+    }
+
     let input = this.itemGrid()
       .locator(`.grid-row-open [data-fieldname="${fieldName}"] .input-with-feedback:visible`)
       .first();
@@ -334,6 +420,15 @@ export class ErpDocumentPage extends BasePage {
     value: string,
     commitKey: 'Enter' | 'Tab' = 'Tab'
   ): Promise<void> {
+    const openModal = this.page.locator('.modal.show:visible').last();
+    if (await openModal.isVisible().catch(() => false)) {
+      // Cung mot y tuong nhu tren, nhung dung cho input thuong thay vi autocomplete.
+      const modalInput = openModal.locator(`[data-fieldname="${fieldName}"] input:visible`).first();
+      await this.fillInput(modalInput, value);
+      await modalInput.press(commitKey);
+      return;
+    }
+
     let input = this.itemGrid().locator(`.grid-row-open [data-fieldname="${fieldName}"] input:visible`).first();
 
     if (!(await input.isVisible().catch(() => false))) {
