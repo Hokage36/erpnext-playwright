@@ -2,7 +2,7 @@ import path from 'path';
 
 import { defineConfig, devices } from '@playwright/test';
 
-const baseURL = process.env.BASE_URL ?? 'https://helps-iii-palmer-accommodations.trycloudflare.com';
+const baseURL = process.env.BASE_URL ?? 'https://per-locking-council-reserves.trycloudflare.com/#login';
 const storageState = path.join(__dirname, 'playwright/.auth/user.json');
 
 const browserProjects = process.env.CI
