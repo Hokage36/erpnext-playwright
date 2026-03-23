@@ -32,19 +32,16 @@ export class StockEntryPage extends ErpDocumentPage {
     await defaultWarehouseSection.click();
 
     await this.fillAutocompleteField('to_warehouse', data.warehouseName);
+    await this.page.keyboard.press('Escape').catch(() => {});
     await this.clickGridCell('.col.grid-static-col[data-fieldname="item_code"]', 'last');
     await this.fillGridAutocompleteField('item_code', data.itemCode);
     await this.waitForFreezeToClear(15000);
+    await this.fillInlineItemGridInputField('qty', data.quantity);
+    await this.page.keyboard.press('Escape').catch(() => {});
+    await this.dismissMessageDialogIfPresent();
 
-    const quantityInput = this.page.getByRole('textbox', { name: 'S\u1ed1 l\u01b0\u1ee3ng' }).last();
-    await expect(quantityInput).toBeVisible();
-    await expect(quantityInput).toBeEditable();
-    await quantityInput.click();
-    await quantityInput.press('ControlOrMeta+A');
-    await quantityInput.fill(data.quantity);
-    await quantityInput.press('Tab');
-
-    await this.save();
+    await this.saveUntilSaved(/\/app\/stock-entry\/(?!new-stock-entry-)/);
+    await this.dismissMessageDialogIfPresent();
     await this.assertNoMissingFieldDialog();
   }
 }
