@@ -3,6 +3,14 @@ name: ERPNext Playwright CI/CD
 run-name: ${{ github.event.inputs.run_label || (github.event.inputs.spec_file && format('Run {0}', github.event.inputs.spec_file)) || 'Run full Playwright suite' }}
 
 on:
+  push:
+    branches:
+      - main
+      - master
+  pull_request:
+    branches:
+      - main
+      - master
   workflow_dispatch:
     inputs:
       run_label:
@@ -22,7 +30,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  BASE_URL: https://dress-harvey-sound-else.trycloudflare.com/app/home
+  BASE_URL: https://dress-harvey-sound-else.trycloudflare.com
 
 jobs:
   test:
@@ -31,7 +39,7 @@ jobs:
     timeout-minutes: 60
     environment:
       name: erpnext-production
-      url: https://dress-harvey-sound-else.trycloudflare.com/app/home
+      url: https://dress-harvey-sound-else.trycloudflare.com
     steps:
       - name: Checkout repository
         uses: actions/checkout@v5
