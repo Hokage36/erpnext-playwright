@@ -1,6 +1,5 @@
 import { expect, Page } from '@playwright/test';
 
-import { uiText } from '../../data/ui-text';
 import { ErpDocumentPage } from '../erp-document.page';
 
 type PurchaseOrderData = {
@@ -8,6 +7,7 @@ type PurchaseOrderData = {
   itemCode: string;
   warehouseName: string;
   quantity: string;
+  rate?: string;
   stockUom: string;
   scheduleDate: string;
 };
@@ -18,32 +18,14 @@ export class PurchaseOrderPage extends ErpDocumentPage {
   }
 
   async gotoNewFromList(): Promise<void> {
-    await this.goto('/app/home');
-    await this.openModule(uiText.modules.buying);
-    await this.openSidebarLink('/app/purchase-order');
-
-    const createButton = this.page.locator('.primary-action:visible').first();
-    if (await createButton.isVisible().catch(() => false)) {
-      await this.clickPrimaryAction();
-      return;
-    }
-
-    await this.goto('/app/purchase-order/new-purchase-order');
-    await expect(this.saveButton()).toBeVisible({ timeout: 15000 });
+    await this.gotoNewDocumentFromList('/app/purchase-order/new-purchase-order', '/app/purchase-order');
   }
 
   async createPurchaseOrder(data: PurchaseOrderData): Promise<void> {
     await this.gotoNewFromList();
 
-    const supplierInput = this.autocompleteField('supplier');
-    if (await supplierInput.isVisible().catch(() => false)) {
-      await this.fillAutocomplete(supplierInput, data.supplierName);
-      await supplierInput.press('Tab').catch(() => {});
-    } else {
-      const fallbackSupplierInput = this.page.getByRole('combobox').nth(2);
-      await this.fillAutocomplete(fallbackSupplierInput, data.supplierName);
-      await fallbackSupplierInput.press('Tab').catch(() => {});
-    }
+    // Field supplier tren ERPNext thay doi kha linh tinh theo layout, nen tach rieng mot helper fallback.
+    await this.fillPurchaseOrderSupplier(data.supplierName);
 
     await this.waitForFreezeToClear(15000);
     await this.dismissMaterialRequestDialogIfPresent();
@@ -76,22 +58,50 @@ export class PurchaseOrderPage extends ErpDocumentPage {
     await uomInput.fill(data.stockUom);
     await uomInput.press('Enter');
 
-    const openRowButton = this.page.locator('.btn-open-row > a').first();
-    await expect(openRowButton).toBeVisible();
-    await openRowButton.click();
+    await this.openFirstGridRow();
+    await this.fillOpenRowAutocompleteField('warehouse', data.warehouseName);
 
-    const openRow = this.page.locator('.grid-row-open').last();
-    await expect(openRow).toBeVisible();
+    if (data.rate) {
+      await this.fillOpenRowInputField('rate', data.rate);
+    }
 
-    const warehouseInput = openRow.locator('[data-fieldname="warehouse"] .input-with-feedback:visible').first();
-    await expect(warehouseInput).toBeVisible();
-    await expect(warehouseInput).toBeEditable();
-    await this.fillAutocomplete(warehouseInput, data.warehouseName);
-
-    const collapseRowButton = this.page.locator('.btn.btn-secondary.btn-sm.pull-right').first();
-    await expect(collapseRowButton).toBeVisible();
-    await collapseRowButton.click();
+    await this.closeOpenGridRow();
 
     await this.saveAndSubmit();
+  }
+
+  private async fillPurchaseOrderSupplier(supplierName: string): Promise<void> {
+    const supplierAutocomplete = this.autocompleteField('supplier');
+
+    // Uu tien autocomplete dung chuan fieldname.
+    if (await supplierAutocomplete.isVisible().catch(() => false)) {
+      await this.fillAutocomplete(supplierAutocomplete, supplierName);
+      await supplierAutocomplete.press('Tab').catch(() => {});
+
+      const currentValue = await supplierAutocomplete.inputValue().catch(() => '');
+      if (currentValue === supplierName) {
+        return;
+      }
+    }
+
+    // Neu ERPNext render supplier bang role=combobox thi dung nhanh locator nay.
+    const supplierCombobox = this.page.locator('[data-fieldname="supplier"] [role="combobox"]:visible').first();
+    if (await supplierCombobox.isVisible().catch(() => false)) {
+      await this.fillAutocomplete(supplierCombobox, supplierName);
+      await supplierCombobox.press('Tab').catch(() => {});
+
+      const currentValue = await supplierCombobox.inputValue().catch(() => '');
+      if (currentValue === supplierName) {
+        return;
+      }
+    }
+
+    // Fallback cuoi cung la input thuong.
+    const supplierInput = this.inputField('supplier');
+    if (await supplierInput.isVisible().catch(() => false)) {
+      await this.fillInput(supplierInput, supplierName);
+      await supplierInput.press('Enter').catch(() => {});
+      await supplierInput.press('Tab').catch(() => {});
+    }
   }
 }
