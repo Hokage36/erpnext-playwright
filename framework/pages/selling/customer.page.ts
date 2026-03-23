@@ -9,24 +9,25 @@ export class CustomerPage extends BasePage {
   }
 
   async gotoList(): Promise<void> {
-    await this.goto('/app/home');
-    await this.openModule(uiText.modules.sales);
-    await this.openSidebarLink('/app/customer');
+    await this.goto('/app/customer');
   }
 
   async createCustomer(customerName: string): Promise<void> {
-    await this.clickPrimaryAction();
+    const addCustomerButton = this.page.getByRole('button', { name: 'Thêm Khách Hàng' }).first();
+    await expect(addCustomerButton).toBeVisible({ timeout: 15000 });
+    await expect(addCustomerButton).toBeEnabled();
+    await addCustomerButton.click();
 
-    const dialog = this.page.getByRole('dialog');
+    const dialog = this.page.locator('.modal.show[role="dialog"]').last();
 
-    await expect(dialog).toBeVisible();
+    await expect(dialog).toBeVisible({ timeout: 15000 });
     await this.fillInput(dialog.getByRole('textbox').first(), customerName);
 
-    const saveButton = this.page.getByRole('button', { name: uiText.common.save });
+    const saveButton = dialog.getByRole('button', { name: uiText.common.save }).last();
 
     await expect(saveButton).toBeVisible();
     await expect(saveButton).toBeEnabled();
     await saveButton.click();
-    await expect(dialog).toBeHidden();
+    await expect(dialog).toBeHidden({ timeout: 15000 });
   }
 }
