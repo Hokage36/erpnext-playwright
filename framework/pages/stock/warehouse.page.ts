@@ -18,7 +18,9 @@ export class WarehousePage extends ErpDocumentPage {
     await this.gotoList();
     await this.clickPrimaryAction();
     await this.fillInputField('warehouse_name', warehouseName);
-    await this.save();
+    await this.inputField('warehouse_name').press('Tab').catch(() => {});
+    await this.saveUntilSaved(/\/app\/warehouse\/(?!new-warehouse-)/);
+    await this.dismissMessageDialogIfPresent();
     await this.assertNoMissingFieldDialog();
   }
 }
