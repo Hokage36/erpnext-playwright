@@ -30,7 +30,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  BASE_URL: https://dress-harvey-sound-else.trycloudflare.com
+  BASE_URL: https://helps-iii-palmer-accommodations.trycloudflare.com
 
 jobs:
   test:
@@ -39,7 +39,7 @@ jobs:
     timeout-minutes: 60
     environment:
       name: erpnext-production
-      url: https://dress-harvey-sound-else.trycloudflare.com
+      url: https://helps-iii-palmer-accommodations.trycloudflare.com
     steps:
       - name: Checkout repository
         uses: actions/checkout@v5
