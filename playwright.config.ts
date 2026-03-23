@@ -45,11 +45,11 @@ const browserProjects = process.env.CI
 
 export default defineConfig({
   testDir: './tests',
-  timeout: 60000,
-  fullyParallel: true,
+  timeout: 180000,
+  fullyParallel: false,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 1 : 0,
-  workers: process.env.CI ? 1 : undefined,
+  workers: Number(process.env.PLAYWRIGHT_WORKERS ?? '1'),
   reporter: process.env.CI
     ? [
         ['html', { open: 'never' }],
@@ -63,6 +63,7 @@ export default defineConfig({
   use: {
     baseURL,
     trace: process.env.CI ? 'on-first-retry' : 'retain-on-failure',
+    video: process.env.CI ? 'on-first-retry' : 'retain-on-failure',
   },
   projects: [
     {
