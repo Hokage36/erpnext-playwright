@@ -15,16 +15,10 @@ export class SalesPartnerPage extends BasePage {
   }
 
   async gotoList(): Promise<void> {
-    await this.goto('/app/home');
-    await this.openModule(uiText.modules.sales);
+    await this.goto('/app/sales-partner');
 
-    const salesPartnerLink = this.page.getByRole('link', {
-      name: '\u0110\u1ea1i l\u00fd b\u00e1n h\u00e0ng',
-      exact: true,
-    });
-
-    await expect(salesPartnerLink).toBeVisible();
-    await salesPartnerLink.click();
+    const createButton = this.page.locator('.primary-action:visible').first();
+    await expect(createButton).toBeVisible({ timeout: 15000 });
   }
 
   async createSalesPartner(data: SalesPartnerData): Promise<void> {
