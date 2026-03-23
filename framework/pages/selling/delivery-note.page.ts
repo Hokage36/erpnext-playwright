@@ -15,12 +15,12 @@ export class DeliveryNotePage extends ErpDocumentPage {
     super(page);
   }
 
-  async gotoNew(): Promise<void> {
-    await this.goto('/app/delivery-note/new-delivery-note');
+  async gotoNewFromList(): Promise<void> {
+    await this.gotoNewDocumentFromList('/app/delivery-note/new-delivery-note', '/app/delivery-note');
   }
 
   async createDeliveryNote(data: DeliveryNoteData): Promise<void> {
-    await this.gotoNew();
+    await this.gotoNewFromList();
     await this.fillAutocompleteField('customer', data.customerName);
 
     const setWarehouseInput = this.autocompleteField('set_warehouse');
