@@ -1,6 +1,5 @@
 import { Page } from '@playwright/test';
 
-import { uiText } from '../../data/ui-text';
 import { ErpDocumentPage } from '../erp-document.page';
 
 type SupplierQuotationData = {
@@ -16,10 +15,7 @@ export class SupplierQuotationPage extends ErpDocumentPage {
   }
 
   async gotoNewFromList(): Promise<void> {
-    await this.goto('/app/home');
-    await this.openModule(uiText.modules.buying);
-    await this.openSidebarLink('/app/supplier-quotation');
-    await this.clickPrimaryAction();
+    await this.gotoNewDocumentFromList('/app/supplier-quotation/new-supplier-quotation', '/app/supplier-quotation');
   }
 
   async createSupplierQuotation(data: SupplierQuotationData): Promise<void> {
