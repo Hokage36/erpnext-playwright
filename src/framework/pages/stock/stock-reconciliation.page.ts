@@ -46,4 +46,21 @@ export class StockReconciliationPage extends ErpDocumentPage {
 
     return { appliedQuantity };
   }
+
+  async prepareStockReconciliationDraft(data: StockReconciliationData): Promise<{ currentQuantity: string }> {
+    await this.gotoNew();
+    await this.selectFieldOption('purpose', data.purpose);
+    await this.fillAutocompleteField('set_warehouse', data.warehouseName);
+    await this.clickGridCell('.col.grid-static-col[data-fieldname="item_code"]', 'last');
+    await this.fillGridAutocompleteField('item_code', data.itemCode);
+    await this.waitForFreezeToClear(15000);
+
+    const currentQuantity = await this.readInlineItemGridInputValue('qty');
+
+    await this.fillInlineItemGridInputField('valuation_rate', data.valuationRate, 'Enter');
+    await this.page.keyboard.press('Escape').catch(() => {});
+    await this.dismissMessageDialogIfPresent();
+
+    return { currentQuantity };
+  }
 }

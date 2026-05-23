@@ -18,26 +18,48 @@ export class ItemPage extends ErpDocumentPage {
     await this.goto('/app/item/new-item');
   }
 
-  async createItem(data: ItemData): Promise<void> {
+  async fillItemForm(data: Partial<ItemData>): Promise<void> {
     await this.gotoNew();
-    await this.fillInputField('item_code', data.itemCode);
-    await this.fillInputField('item_name', data.itemName);
+
+    if (data.itemCode !== undefined) {
+      await this.fillInputField('item_code', data.itemCode);
+      await this.inputField('item_code').press('Tab').catch(() => {});
+      await this.page.waitForTimeout(300);
+    }
+
+    if (data.itemName !== undefined) {
+      const itemNameInput = this.inputField('item_name');
+      await expect(itemNameInput).toBeVisible();
+      await expect(itemNameInput).toBeEditable();
+      await itemNameInput.click();
+      await itemNameInput.press('Control+A').catch(() => {});
+      await this.fillInput(itemNameInput, data.itemName);
+      await itemNameInput.press('Tab').catch(() => {});
+    }
 
     const itemGroupInput = this.autocompleteField('item_group');
-    await expect(itemGroupInput).toBeVisible();
-    if ((await itemGroupInput.inputValue().catch(() => '')) !== data.itemGroup) {
-      await this.fillAutocomplete(itemGroupInput, data.itemGroup);
+    if (data.itemGroup !== undefined) {
+      await expect(itemGroupInput).toBeVisible();
+      if ((await itemGroupInput.inputValue().catch(() => '')) !== data.itemGroup) {
+        await this.fillAutocomplete(itemGroupInput, data.itemGroup);
+      }
+      await itemGroupInput.press('Tab').catch(() => {});
     }
-    await itemGroupInput.press('Tab').catch(() => {});
 
     const stockUomInput = this.autocompleteField('stock_uom');
-    await expect(stockUomInput).toBeVisible();
-    if ((await stockUomInput.inputValue().catch(() => '')) !== data.stockUom) {
-      await this.fillAutocomplete(stockUomInput, data.stockUom);
+    if (data.stockUom !== undefined) {
+      await expect(stockUomInput).toBeVisible();
+      if ((await stockUomInput.inputValue().catch(() => '')) !== data.stockUom) {
+        await this.fillAutocomplete(stockUomInput, data.stockUom);
+      }
+      await stockUomInput.press('Tab').catch(() => {});
     }
-    await stockUomInput.press('Tab').catch(() => {});
+  }
 
-    await this.save();
+  async createItem(data: ItemData): Promise<void> {
+    await this.fillItemForm(data);
+    await this.saveUntilSaved(/\/app\/item\/(?!new-item-)/);
+    await this.dismissMessageDialogIfPresent();
     await this.assertNoMissingFieldDialog();
   }
 }

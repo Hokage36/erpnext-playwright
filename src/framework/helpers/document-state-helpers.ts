@@ -7,6 +7,21 @@ type CurrentFormState = {
   name?: string;
 };
 
+type CurrentFormItemMutation = {
+  itemCode?: string | null;
+  qty?: number | string | null;
+  rate?: number | string | null;
+  targetWarehouse?: string | null;
+  valuationRate?: number | string | null;
+  warehouse?: string | null;
+};
+
+export type CurrentFormDocumentMutation = {
+  firstItem?: CurrentFormItemMutation;
+  setWarehouse?: string | null;
+  toWarehouse?: string | null;
+};
+
 async function getCurrentFormState(page: Page): Promise<CurrentFormState | null> {
   return page
     .evaluate(() => {
@@ -58,4 +73,85 @@ export async function expectDraftOrUnsavedDocument(
   }
 
   await expectUnsavedNewDocument(page, formPage, urlPattern);
+}
+
+export async function mutateCurrentFormDocument(
+  page: Page,
+  mutation: CurrentFormDocumentMutation
+): Promise<void> {
+  await page.evaluate(async (nextMutation) => {
+    const appWindow = window as typeof window & {
+      cur_frm?: {
+        dirty: () => void;
+        doc: {
+          doctype: string;
+          items?: Array<{
+            doctype: string;
+            name: string;
+          }>;
+          name: string;
+        };
+        refresh_field: (fieldname: string) => void;
+      };
+      frappe?: {
+        model?: {
+          set_value: (doctype: string, name: string, fieldname: string, value: unknown) => Promise<unknown> | unknown;
+        };
+      };
+    };
+
+    const form = appWindow.cur_frm;
+    const setValue = appWindow.frappe?.model?.set_value;
+
+    if (!form || !setValue) {
+      throw new Error('ERPNext form context is not available for client-side document mutation.');
+    }
+
+    const fieldsToRefresh = new Set<string>(['items']);
+
+    if (nextMutation.toWarehouse !== undefined) {
+      await setValue(form.doc.doctype, form.doc.name, 'to_warehouse', nextMutation.toWarehouse);
+      fieldsToRefresh.add('to_warehouse');
+    }
+
+    if (nextMutation.setWarehouse !== undefined) {
+      await setValue(form.doc.doctype, form.doc.name, 'set_warehouse', nextMutation.setWarehouse);
+      fieldsToRefresh.add('set_warehouse');
+    }
+
+    const firstItem = form.doc.items?.[0];
+    if (firstItem && nextMutation.firstItem) {
+      if (nextMutation.firstItem.itemCode !== undefined) {
+        await setValue(firstItem.doctype, firstItem.name, 'item_code', nextMutation.firstItem.itemCode);
+      }
+
+      if (nextMutation.firstItem.qty !== undefined) {
+        await setValue(firstItem.doctype, firstItem.name, 'qty', nextMutation.firstItem.qty);
+      }
+
+      if (nextMutation.firstItem.rate !== undefined) {
+        await setValue(firstItem.doctype, firstItem.name, 'rate', nextMutation.firstItem.rate);
+      }
+
+      if (nextMutation.firstItem.warehouse !== undefined) {
+        await setValue(firstItem.doctype, firstItem.name, 'warehouse', nextMutation.firstItem.warehouse);
+      }
+
+      if (nextMutation.firstItem.targetWarehouse !== undefined) {
+        await setValue(firstItem.doctype, firstItem.name, 't_warehouse', nextMutation.firstItem.targetWarehouse);
+      }
+
+      if (nextMutation.firstItem.valuationRate !== undefined) {
+        await setValue(firstItem.doctype, firstItem.name, 'valuation_rate', nextMutation.firstItem.valuationRate);
+      }
+    }
+
+    for (const fieldname of fieldsToRefresh) {
+      form.refresh_field(fieldname);
+    }
+
+    form.dirty();
+  }, mutation);
+
+  await page.waitForTimeout(500);
 }

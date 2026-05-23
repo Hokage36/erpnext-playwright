@@ -14,11 +14,22 @@ export class WarehousePage extends ErpDocumentPage {
     await this.openSidebarLink('/app/warehouse');
   }
 
-  async createWarehouse(warehouseName: string): Promise<void> {
+  async gotoNew(): Promise<void> {
     await this.gotoList();
     await this.clickPrimaryAction();
-    await this.fillInputField('warehouse_name', warehouseName);
-    await this.inputField('warehouse_name').press('Tab').catch(() => {});
+  }
+
+  async fillWarehouseForm(warehouseName?: string): Promise<void> {
+    await this.gotoNew();
+
+    if (warehouseName !== undefined) {
+      await this.fillInputField('warehouse_name', warehouseName);
+      await this.inputField('warehouse_name').press('Tab').catch(() => {});
+    }
+  }
+
+  async createWarehouse(warehouseName: string): Promise<void> {
+    await this.fillWarehouseForm(warehouseName);
     await this.saveUntilSaved(/\/app\/warehouse\/(?!new-warehouse-)/);
     await this.dismissMessageDialogIfPresent();
     await this.assertNoMissingFieldDialog();

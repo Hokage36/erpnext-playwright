@@ -348,6 +348,72 @@ export class ErpDocumentPage extends BasePage {
     await this.fillInputField('reference_no', value);
   }
 
+  async fillFirstItemQuantity(value: string): Promise<void> {
+    const inlineQuantityInput = this.itemGrid().locator('[data-fieldname="qty"] input:visible').first();
+    if (await inlineQuantityInput.isVisible().catch(() => false)) {
+      await this.fillInput(inlineQuantityInput, value);
+      await inlineQuantityInput.press('Tab').catch(() => {});
+      return;
+    }
+
+    const fallbackVisibleQuantityInput = this.page.locator('[data-fieldname="qty"] input:visible').last();
+    if (await fallbackVisibleQuantityInput.isVisible().catch(() => false)) {
+      await this.fillInput(fallbackVisibleQuantityInput, value);
+      await fallbackVisibleQuantityInput.press('Tab').catch(() => {});
+      return;
+    }
+
+    const mutatedOnClient = await this.page
+      .evaluate(async (nextValue) => {
+        const appWindow = window as typeof window & {
+          cur_frm?: {
+            dirty: () => void;
+            doc?: {
+              items?: Array<{
+                doctype: string;
+                name: string;
+                qty?: unknown;
+              }>;
+            };
+            refresh_field: (fieldname: string) => void;
+          };
+          frappe?: {
+            model?: {
+              set_value: (doctype: string, name: string, fieldname: string, value: unknown) => Promise<unknown> | unknown;
+            };
+          };
+        };
+
+        const form = appWindow.cur_frm;
+        const firstItem = form?.doc?.items?.[0];
+
+        if (!form || !firstItem) {
+          return false;
+        }
+
+        const setValue = appWindow.frappe?.model?.set_value;
+        try {
+          await setValue?.(firstItem.doctype, firstItem.name, 'qty', nextValue);
+        } catch {
+          firstItem.qty = nextValue;
+        }
+
+        form.refresh_field('items');
+        form.dirty();
+        return true;
+      }, value)
+      .catch(() => false);
+
+    if (mutatedOnClient) {
+      await this.page.waitForTimeout(500);
+      return;
+    }
+
+    await this.openFirstGridRow();
+    await this.fillOpenRowInputField('qty', value);
+    await this.closeOpenGridRow();
+  }
+
   protected async fillGridAutocompleteField(fieldName: string, value: string): Promise<void> {
     await this.fillAutocompleteField(fieldName, value, 'last');
   }

@@ -23,16 +23,17 @@ export class DeliveryNotePage extends ErpDocumentPage {
     await this.gotoNewFromList();
     await this.fillAutocompleteField('customer', data.customerName);
 
-    const setWarehouseInput = this.autocompleteField('set_warehouse');
-    await this.fillAutocomplete(setWarehouseInput, data.warehouseName);
-    await this.page.keyboard.press('Escape');
+    await this.fillSetWarehouseIfVisible(data.warehouseName);
+    await this.page.keyboard.press('Escape').catch(() => {});
 
     await this.clickGridCell('.col.grid-static-col[data-fieldname="item_code"]:visible', 'last');
     await this.fillGridAutocompleteField('item_code', data.itemCode);
     await this.fillGridInputField('qty', data.quantity);
     await this.fillGridAutocompleteField('uom', data.stockUom);
+    await this.fillRowWarehouse(data.warehouseName);
 
-    await this.save();
+    await this.saveUntilSaved(/\/app\/delivery-note\/(?!new-delivery-note-)/);
+    await this.dismissMessageDialogIfPresent();
     await this.assertNoMissingFieldDialog();
   }
 }
