@@ -20,7 +20,7 @@ Bo test nay da duoc cau hinh de chay CI/CD bang GitHub Actions voi moi truong di
 
 Bo test uu tien bien moi truong tren CI, va tu dong fallback sang file local tren may ca nhan:
 
-- `playwright/.auth/local.credentials.json`
+- `.auth/local.credentials.json`
 
 Noi dung file:
 
@@ -31,7 +31,7 @@ Noi dung file:
 }
 ```
 
-Thu muc `playwright/.auth/` da duoc ignore, nen file nay se khong bi commit.
+Thu muc `.auth/` da duoc ignore, nen file nay se khong bi commit.
 
 Neu muon, ban van co the ghi de bang bien moi truong trong terminal.
 
@@ -46,13 +46,13 @@ npx playwright install chromium
 npm run test:e2e
 ```
 
-Neu da tao `playwright/.auth/local.credentials.json`, co the bo qua 2 dong `ERP_USERNAME` va `ERP_PASSWORD`:
+Neu da tao `.auth/local.credentials.json`, co the bo qua 2 dong `ERP_USERNAME` va `ERP_PASSWORD`:
 
 ```powershell
 $env:BASE_URL = 'https://erpnext.sangttx.xyz'
 npm ci
 npx playwright install chromium
-npx playwright test tests/selling/sales-order.spec.ts --project=chromium
+npx playwright test src/tests/selling/tc_selling_04/TC_SELLING_04_01-create_sales_order.spec.ts --project=chromium
 ```
 
 ## Xem trace khi fail
@@ -71,7 +71,7 @@ npx playwright test tests/selling/sales-order.spec.ts --project=chromium
 
 ## Ghi chu
 
-- Dang nhap hien duoc tao dong trong `setup/auth.setup.ts`, khong con dung file session commit san.
+- Dang nhap hien duoc tao dong trong `src/setup/auth.setup.ts`, khong con dung file session commit san.
 - CI chi chay `chromium` de tranh tao du lieu lap lai tren moi truong ERPNext that.
 - Bao cao HTML van duoc upload artifact cho moi lan chay, ke ca khi test fail.
 - O local, trace se duoc giu lai khi test fail de debug bang Trace Viewer.

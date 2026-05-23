@@ -2,8 +2,8 @@ import path from 'path';
 
 import { defineConfig, devices } from '@playwright/test';
 
-const baseURL = process.env.BASE_URL ?? 'https://per-locking-council-reserves.trycloudflare.com/#login';
-const storageState = path.join(__dirname, 'playwright/.auth/user.json');
+const baseURL = process.env.BASE_URL ?? 'http://localhost:8080';
+const storageState = path.join(__dirname, '.auth/user.json');
 
 const browserProjects = process.env.CI
   ? [
@@ -44,7 +44,7 @@ const browserProjects = process.env.CI
     ];
 
 export default defineConfig({
-  testDir: './tests',
+  testDir: './src/tests',
   timeout: 180000,
   fullyParallel: false,
   forbidOnly: !!process.env.CI,
@@ -68,7 +68,7 @@ export default defineConfig({
   projects: [
     {
       name: 'setup',
-      testDir: './setup',
+      testDir: './src/setup',
       testMatch: /.*\.setup\.ts/,
     },
     ...browserProjects,
