@@ -30,7 +30,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  BASE_URL: https://per-locking-council-reserves.trycloudflare.com/#login
+  BASE_URL: https://erpnext.sangttx36.online/#login
 
 jobs:
   test:
@@ -39,7 +39,7 @@ jobs:
     timeout-minutes: 60
     environment:
       name: erpnext-production
-      url: https://per-locking-council-reserves.trycloudflare.com/#login
+      url: https://erpnext.sangttx36.online/#login
     steps:
       - name: Checkout repository
         uses: actions/checkout@v5
