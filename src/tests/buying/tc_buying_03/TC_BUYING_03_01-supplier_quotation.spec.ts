@@ -1,0 +1,13 @@
+import { masterData } from '../../../framework/data/master-data';
+import { test } from '../../../framework/fixtures/app.fixture';
+
+test('TC_BUYING_03_01-Tao bao gia cua NCC', async ({ supplierQuotationPage }) => {
+  test.setTimeout(120000);
+
+  await supplierQuotationPage.createSupplierQuotation({
+    supplierName: masterData.supplierName,
+    itemCode: masterData.itemCode,
+    warehouseName: masterData.warehouseName,
+    quantity: masterData.defaultQuantity,
+  });
+});
