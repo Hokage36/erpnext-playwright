@@ -1,5 +1,6 @@
 import { Page } from '@playwright/test';
 
+import { uiText } from '../../data/ui-text';
 import { ErpDocumentPage } from '../erp-document.page';
 
 type DeliveryNoteData = {
@@ -17,6 +18,11 @@ export class DeliveryNotePage extends ErpDocumentPage {
 
   async gotoNewFromList(): Promise<void> {
     await this.gotoNewDocumentFromList('/app/delivery-note/new-delivery-note', '/app/delivery-note');
+  }
+
+  async openFromSalesOrder(): Promise<void> {
+    await this.openCreateMenuItem(uiText.createMenu.deliveryNote);
+    await this.page.waitForURL(/\/app\/delivery-note\//, { timeout: 15000 });
   }
 
   async createDeliveryNote(data: DeliveryNoteData): Promise<void> {
