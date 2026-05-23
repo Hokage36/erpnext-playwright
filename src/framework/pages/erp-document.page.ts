@@ -76,6 +76,7 @@ export class ErpDocumentPage extends BasePage {
     const submitButton = this.submitButton();
 
     for (let attempt = 0; attempt < attempts; attempt += 1) {
+      await this.dismissMessageDialogIfPresent();
       await expect(saveButton).toBeVisible();
       await expect(saveButton).toBeEnabled();
       await saveButton.click();
@@ -95,6 +96,51 @@ export class ErpDocumentPage extends BasePage {
     await this.submit();
   }
 
+  async attemptSaveAndSubmit(attempts = 3): Promise<boolean> {
+    const saveButton = this.saveButton();
+    const submitButton = this.submitButton();
+
+    for (let attempt = 0; attempt < attempts; attempt += 1) {
+      await this.dismissMessageDialogIfPresent();
+      await expect(saveButton).toBeVisible();
+      await expect(saveButton).toBeEnabled();
+      await saveButton.click();
+      await this.waitForFreezeToClear();
+
+      if (await submitButton.isVisible().catch(() => false)) {
+        break;
+      }
+
+      await submitButton.waitFor({ state: 'visible', timeout: 5000 }).catch(() => {});
+
+      if (await submitButton.isVisible().catch(() => false)) {
+        break;
+      }
+    }
+
+    if (!(await submitButton.isVisible().catch(() => false))) {
+      return false;
+    }
+
+    await submitButton.click();
+
+    const confirmButton = this.confirmButton();
+    const hasConfirmButton = await confirmButton
+      .waitFor({ state: 'visible', timeout: 5000 })
+      .then(() => true)
+      .catch(() => false);
+
+    if (!hasConfirmButton) {
+      return false;
+    }
+
+    await confirmButton.click();
+    await this.waitForFreezeToClear();
+    await this.page.waitForTimeout(500);
+
+    return !(await submitButton.isVisible().catch(() => false));
+  }
+
   async openCreateMenuItem(itemName: string): Promise<void> {
     const createButton = this.page.getByRole('button', { name: uiText.common.create });
 
@@ -106,6 +152,42 @@ export class ErpDocumentPage extends BasePage {
 
     await expect(menuItem).toBeVisible();
     await menuItem.click();
+  }
+
+  async openCreateMenuItemByPattern(itemPattern: RegExp): Promise<void> {
+    const createButton = this.page.getByRole('button', { name: uiText.common.create });
+
+    await expect(createButton).toBeVisible({ timeout: 15000 });
+    await expect(createButton).toBeEnabled();
+    await createButton.click();
+
+    const menuCandidates = [
+      this.page.getByRole('link', { name: itemPattern }).first(),
+      this.page.getByRole('button', { name: itemPattern }).first(),
+      this.page.getByRole('menuitem', { name: itemPattern }).first(),
+      this.page
+        .locator(
+          '.dropdown-menu:visible a, .dropdown-menu:visible button, .dropdown-menu:visible .dropdown-item, .dropdown-menu:visible [role="menuitem"]'
+        )
+        .filter({ hasText: itemPattern })
+        .first(),
+      this.page.locator('.dropdown-menu:visible').getByText(itemPattern).first(),
+    ];
+
+    const timeoutAt = Date.now() + 5000;
+
+    while (Date.now() < timeoutAt) {
+      for (const menuItem of menuCandidates) {
+        if (await menuItem.isVisible().catch(() => false)) {
+          await menuItem.click();
+          return;
+        }
+      }
+
+      await this.page.waitForTimeout(200);
+    }
+
+    throw new Error(`Khong tim thay muc Create phu hop voi mau: ${itemPattern}`);
   }
 
   // Thu mo document moi truc tiep, neu UI khong cho thi quay ve list va bam Create.
@@ -125,6 +207,32 @@ export class ErpDocumentPage extends BasePage {
 
     await this.goto(newPath);
     await expect(this.saveButton()).toBeVisible({ timeout: 15000 });
+  }
+
+  protected async waitForReturnDocumentAgainst(sourceName: string): Promise<void> {
+    await this.page.waitForFunction(
+      (returnAgainstSourceName) => {
+        const appWindow = window as typeof window & {
+          cur_frm?: {
+            doc?: {
+              is_return?: number | boolean;
+              name?: string;
+              return_against?: string;
+            };
+          };
+        };
+
+        const document = appWindow.cur_frm?.doc;
+        return (
+          !!document &&
+          !!document.is_return &&
+          document.return_against === returnAgainstSourceName &&
+          document.name !== returnAgainstSourceName
+        );
+      },
+      sourceName,
+      { timeout: 15000 }
+    );
   }
 
   // Ten document duoc lay tu URL sau khi ERPNext luu thanh cong.
