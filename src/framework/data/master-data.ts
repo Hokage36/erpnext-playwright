@@ -28,6 +28,12 @@ const commonQuantityInvalidValues = {
 const commonNegativeRate = '-1000';
 const commonNegativeReturnDecimalQuantity = '-0,5';
 
+export const buyingInvalidValues = {
+  ...commonQuantityInvalidValues,
+  negativeReturnDecimalQuantity: commonNegativeReturnDecimalQuantity,
+  negativeRate: commonNegativeRate,
+} as const;
+
 export const sellingInvalidValues = {
   ...commonQuantityInvalidValues,
   negativeCommissionRate: '-1',
@@ -38,6 +44,15 @@ export const sellingInvalidValues = {
 export const stockInvalidValues = {
   ...commonQuantityInvalidValues,
   negativeValuationRate: commonNegativeRate,
+} as const;
+
+export const buyingNewDocumentUrlPatterns = {
+  purchaseInvoice: /\/app\/purchase-invoice\/new-purchase-invoice/,
+  purchaseOrder: /\/app\/purchase-order\/new-purchase-order/,
+  purchaseReceipt: /\/app\/purchase-receipt\/new-purchase-receipt/,
+  requestForQuotation: /\/app\/request-for-quotation\/new-request-for-quotation/,
+  supplier: /\/app\/supplier\/new-supplier/,
+  supplierQuotation: /\/app\/supplier-quotation\/new-supplier-quotation/,
 } as const;
 
 export const sellingNewDocumentUrlPatterns = {

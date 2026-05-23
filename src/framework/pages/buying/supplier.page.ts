@@ -19,13 +19,28 @@ export class SupplierPage extends ErpDocumentPage {
     await expect(this.saveButton()).toBeVisible({ timeout: 15000 });
   }
 
-  async createSupplier(data: SupplierData): Promise<string> {
+  async fillSupplierForm(data: Partial<SupplierData>): Promise<void> {
     await this.gotoNew();
 
-    await this.fillInputField('supplier_name', data.supplierName);
-    await this.fillOptionalAutocompleteField('supplier_group', data.supplierGroup ?? 'All Supplier Groups');
-    await this.fillOptionalSupplierType(data.supplierType ?? 'Company');
-    await this.fillOptionalAutocompleteField('country', data.country ?? 'Vietnam');
+    if (data.supplierName !== undefined) {
+      await this.fillInputField('supplier_name', data.supplierName);
+    }
+
+    if (data.supplierGroup !== undefined) {
+      await this.fillOptionalAutocompleteField('supplier_group', data.supplierGroup);
+    }
+
+    if (data.supplierType !== undefined) {
+      await this.fillOptionalSupplierType(data.supplierType);
+    }
+
+    if (data.country !== undefined) {
+      await this.fillOptionalAutocompleteField('country', data.country);
+    }
+  }
+
+  async createSupplier(data: SupplierData): Promise<string> {
+    await this.fillSupplierForm(data);
 
     await this.saveUntilSaved(/\/app\/supplier\/(?!new-supplier)/);
     await this.assertNoMissingFieldDialog();
@@ -58,7 +73,7 @@ export class SupplierPage extends ErpDocumentPage {
         return;
       }
 
-      const translatedValue = value === 'Company' ? 'Công ty' : value === 'Individual' ? 'Cá nhân' : value;
+      const translatedValue = value === 'Company' ? 'CĂ´ng ty' : value === 'Individual' ? 'CĂ¡ nhĂ¢n' : value;
 
       const availableOptions = await select.locator('option').allTextContents().catch(() => []);
       const selectedLabel = availableOptions.includes(value)
@@ -83,7 +98,7 @@ export class SupplierPage extends ErpDocumentPage {
         return;
       }
 
-      const translatedValue = value === 'Company' ? 'Công ty' : value === 'Individual' ? 'Cá nhân' : value;
+      const translatedValue = value === 'Company' ? 'CĂ´ng ty' : value === 'Individual' ? 'CĂ¡ nhĂ¢n' : value;
       if (currentValue !== translatedValue) {
         await this.fillAutocomplete(autocomplete, translatedValue);
         await autocomplete.press('Tab').catch(() => {});
@@ -102,7 +117,7 @@ export class SupplierPage extends ErpDocumentPage {
       return;
     }
 
-    const translatedValue = value === 'Company' ? 'Công ty' : value === 'Individual' ? 'Cá nhân' : value;
+    const translatedValue = value === 'Company' ? 'CĂ´ng ty' : value === 'Individual' ? 'CĂ¡ nhĂ¢n' : value;
     await this.fillInput(fallbackInput, translatedValue);
     await fallbackInput.press('Tab').catch(() => {});
   }

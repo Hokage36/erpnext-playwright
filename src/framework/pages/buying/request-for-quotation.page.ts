@@ -22,22 +22,48 @@ export class RequestForQuotationPage extends ErpDocumentPage {
     );
   }
 
-  async createRequestForQuotation(data: RequestForQuotationData): Promise<void> {
+  async fillRequestForQuotationForm(data: Partial<RequestForQuotationData>): Promise<void> {
     await this.gotoNewFromList();
 
-    await this.clickGridCell('.col.grid-static-col.col-xs-3.error');
-    await this.fillGridAutocompleteField('supplier', data.supplierName);
-
-    await this.clickGridCell('.col.grid-static-col.col-xs-2.error');
-    await this.fillGridAutocompleteField('item_code', data.itemCode);
-    await this.fillGridInputField('qty', data.quantity);
-
-    const uomInput = this.autocompleteField('uom', 'last');
-    if (await uomInput.isVisible().catch(() => false)) {
-      await this.fillAutocomplete(uomInput, data.stockUom);
+    if (data.supplierName !== undefined) {
+      await this.clickGridCell('.col.grid-static-col.col-xs-3.error');
+      await this.fillGridAutocompleteField('supplier', data.supplierName);
     }
 
-    await this.fillRowWarehouse(data.warehouseName);
+    const shouldFillItemRow =
+      data.itemCode !== undefined ||
+      data.quantity !== undefined ||
+      data.stockUom !== undefined ||
+      data.warehouseName !== undefined;
+
+    if (!shouldFillItemRow) {
+      return;
+    }
+
+    await this.clickGridCell('.col.grid-static-col.col-xs-2.error');
+    await this.openFirstGridRow();
+
+    if (data.itemCode !== undefined) {
+      await this.fillOpenRowAutocompleteField('item_code', data.itemCode);
+    }
+
+    if (data.quantity !== undefined) {
+      await this.fillOpenRowInputField('qty', data.quantity);
+    }
+
+    if (data.stockUom !== undefined) {
+      await this.fillOpenRowAutocompleteField('uom', data.stockUom);
+    }
+
+    if (data.warehouseName !== undefined) {
+      await this.fillOpenRowAutocompleteField('warehouse', data.warehouseName);
+    }
+
+    await this.closeOpenGridRow();
+  }
+
+  async createRequestForQuotation(data: RequestForQuotationData): Promise<void> {
+    await this.fillRequestForQuotationForm(data);
     await this.saveUntilSaved(/\/app\/request-for-quotation\/(?!new-request-for-quotation-)/);
   }
 }
