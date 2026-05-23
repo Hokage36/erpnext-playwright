@@ -108,4 +108,38 @@ export class BasePage {
 
     await expect(missingFieldDialog).toHaveCount(0);
   }
+
+  async expectMissingFieldDialog(): Promise<void> {
+    const dialog = this.page
+      .getByRole('dialog')
+      .filter({ hasText: uiText.common.missingFieldPattern })
+      .first();
+
+    const isDialogVisible = await dialog
+      .waitFor({ state: 'visible', timeout: 3000 })
+      .then(() => true)
+      .catch(() => false);
+
+    if (isDialogVisible) {
+      await expect(dialog).toBeVisible();
+      return;
+    }
+
+    const msgprintDialog = this.page
+      .locator('.modal-dialog.msgprint-dialog')
+      .filter({ hasText: uiText.common.missingFieldPattern })
+      .first();
+
+    await expect(msgprintDialog).toBeVisible({ timeout: 5000 });
+  }
+
+  async expectMessageDialog(pattern?: RegExp): Promise<void> {
+    const dialog = this.page.locator('.modal.show').last();
+
+    await expect(dialog).toBeVisible({ timeout: 5000 });
+
+    if (pattern) {
+      await expect(dialog).toContainText(pattern);
+    }
+  }
 }

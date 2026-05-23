@@ -4,9 +4,9 @@ import { uiText } from '../../data/ui-text';
 import { BasePage } from '../base.page';
 
 type SalesPartnerData = {
+  commissionRate: string;
   name: string;
   territory: string;
-  commissionRate: string;
 };
 
 export class SalesPartnerPage extends BasePage {
@@ -21,24 +21,40 @@ export class SalesPartnerPage extends BasePage {
     await expect(createButton).toBeVisible({ timeout: 15000 });
   }
 
-  async createSalesPartner(data: SalesPartnerData): Promise<void> {
+  async gotoNew(): Promise<void> {
+    await this.gotoList();
     await this.clickPrimaryAction();
+  }
 
-    const partnerNameInput = this.inputField('partner_name');
-    await this.fillInput(partnerNameInput, data.name);
+  async fillSalesPartnerForm(data: Partial<SalesPartnerData>): Promise<void> {
+    await this.gotoNew();
 
-    const territoryInput = this.autocompleteField('territory');
-    await this.fillAutocomplete(territoryInput, data.territory);
+    if (data.name !== undefined) {
+      await this.fillInput(this.inputField('partner_name'), data.name);
+    }
 
-    const commissionRateInput = this.inputField('commission_rate');
+    if (data.territory !== undefined) {
+      await this.fillAutocomplete(this.autocompleteField('territory'), data.territory);
+    }
 
-    await this.fillInput(commissionRateInput, data.commissionRate);
-    await commissionRateInput.press('Enter');
+    if (data.commissionRate !== undefined) {
+      const commissionRateInput = this.inputField('commission_rate');
 
+      await this.fillInput(commissionRateInput, data.commissionRate);
+      await commissionRateInput.press('Enter').catch(() => {});
+    }
+  }
+
+  async saveSalesPartner(): Promise<void> {
     const saveButton = this.page.getByRole('button', { name: uiText.common.save });
 
     await expect(saveButton).toBeVisible();
     await expect(saveButton).toBeEnabled();
     await saveButton.click();
+  }
+
+  async createSalesPartner(data: SalesPartnerData): Promise<void> {
+    await this.fillSalesPartnerForm(data);
+    await this.saveSalesPartner();
   }
 }

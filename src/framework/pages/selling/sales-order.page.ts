@@ -1,14 +1,15 @@
-import { expect, Page } from '@playwright/test';
+import { Page } from '@playwright/test';
 
 import { ErpDocumentPage } from '../erp-document.page';
 
 type SalesOrderData = {
   customerName: string;
+  transactionDate?: string;
+  deliveryDate: string;
   itemCode: string;
-  warehouseName: string;
   quantity: string;
   rate?: string;
-  deliveryDate: string;
+  warehouseName: string;
 };
 
 export class SalesOrderPage extends ErpDocumentPage {
@@ -20,60 +21,152 @@ export class SalesOrderPage extends ErpDocumentPage {
     await this.gotoNewDocumentFromList('/app/sales-order/new-sales-order', '/app/sales-order');
   }
 
-  async createSalesOrder(data: SalesOrderData): Promise<void> {
+  async fillSalesOrderForm(data: Partial<SalesOrderData>): Promise<void> {
     await this.gotoNewFromList();
 
-    // Customer cung co the thay doi kieu render, nen xu ly rieng giong Purchase Order.
-    await this.fillSalesOrderCustomer(data.customerName);
-
-    const deliveryDateInput = this.page.getByRole('textbox').nth(1);
-    await expect(deliveryDateInput).toBeVisible();
-    await expect(deliveryDateInput).toBeEditable();
-    await this.fillDateInput(deliveryDateInput, data.deliveryDate);
-
-    await this.fillSetWarehouseIfVisible(data.warehouseName);
-
-    const itemGridCell = this.page.locator('.col.grid-static-col.col-xs-3.error').first();
-    await expect(itemGridCell).toBeVisible();
-    await itemGridCell.click();
-
-    const itemCodeInput = this.page.getByRole('combobox', { name: 'M\u00e3 h\u00e0ng' });
-    await expect(itemCodeInput).toBeVisible();
-    await expect(itemCodeInput).toBeEditable();
-    await itemCodeInput.fill(data.itemCode);
-    await itemCodeInput.press('Enter');
-
-    const quantityInput = this.page.getByRole('textbox', { name: 'S\u1ed1 l\u01b0\u1ee3ng' });
-    await expect(quantityInput).toBeVisible();
-    await expect(quantityInput).toBeEditable();
-    await quantityInput.fill(data.quantity);
-
-    await this.openFirstGridRow();
-    await this.fillOpenRowAutocompleteField('warehouse', data.warehouseName);
-
-    if (data.rate) {
-      await this.fillOpenRowInputField('rate', data.rate);
+    if (data.customerName !== undefined) {
+      await this.fillSalesOrderCustomer(data.customerName);
     }
 
-    await this.closeOpenGridRow();
+    if (data.transactionDate !== undefined) {
+      const transactionDateInputByField = this.page.locator('[data-fieldname="transaction_date"] input:visible').first();
+      const transactionDateInput = (await transactionDateInputByField.isVisible().catch(() => false))
+        ? transactionDateInputByField
+        : this.page.getByRole('textbox').first();
 
+      await this.fillDateInput(transactionDateInput, data.transactionDate);
+    }
+
+    if (data.deliveryDate !== undefined) {
+      const deliveryDateInputByField = this.page.locator('[data-fieldname="delivery_date"] input:visible').first();
+      const deliveryDateInput = (await deliveryDateInputByField.isVisible().catch(() => false))
+        ? deliveryDateInputByField
+        : this.page.getByRole('textbox').nth(1);
+
+      await this.fillDateInput(deliveryDateInput, data.deliveryDate);
+    }
+
+    const shouldFillItemRow =
+      data.itemCode !== undefined ||
+      data.quantity !== undefined ||
+      data.warehouseName !== undefined ||
+      data.rate !== undefined;
+
+    if (!shouldFillItemRow) {
+      return;
+    }
+
+    await this.mutateFirstSalesOrderItem({
+      deliveryDate: data.deliveryDate,
+      itemCode: data.itemCode,
+      qty: data.quantity,
+      rate: data.rate,
+      warehouse: data.warehouseName,
+    });
+  }
+
+  async createSalesOrder(data: SalesOrderData): Promise<void> {
+    await this.fillSalesOrderForm(data);
     await this.saveAndSubmit();
   }
 
   private async fillSalesOrderCustomer(customerName: string): Promise<void> {
     const customerAutocomplete = this.autocompleteField('customer');
 
-    // Truong hop dep nhat: ERPNext render dung autocomplete cua field customer.
     if (await customerAutocomplete.isVisible().catch(() => false)) {
       await this.fillAutocomplete(customerAutocomplete, customerName);
       await customerAutocomplete.press('Tab').catch(() => {});
       return;
     }
 
-    // Fallback ve input thuong neu giao dien hien khac di.
     const customerInput = this.inputField('customer');
-    await this.fillInput(customerInput, customerName);
-    await customerInput.press('Enter').catch(() => {});
-    await customerInput.press('Tab').catch(() => {});
+    if (await customerInput.isVisible().catch(() => false)) {
+      await this.fillInput(customerInput, customerName);
+      await customerInput.press('Enter').catch(() => {});
+      await customerInput.press('Tab').catch(() => {});
+      return;
+    }
+
+    const fallbackCustomerInput = this.page.locator('[data-fieldname="customer"] [role="combobox"]:visible').first();
+    await this.fillAutocomplete(fallbackCustomerInput, customerName);
+    await fallbackCustomerInput.press('Tab').catch(() => {});
+  }
+
+  private async mutateFirstSalesOrderItem(data: {
+    deliveryDate?: string;
+    itemCode?: string;
+    qty?: string;
+    rate?: string;
+    warehouse?: string;
+  }): Promise<void> {
+    await this.page.evaluate(async (nextItem) => {
+      const appWindow = window as typeof window & {
+        cur_frm?: {
+          add_child?: (fieldname: string) => {
+            doctype: string;
+            name: string;
+          };
+          dirty: () => void;
+          doc: {
+            items?: Array<{
+              doctype: string;
+              name: string;
+            }>;
+          };
+          refresh_field: (fieldname: string) => void;
+        };
+        frappe?: {
+          model?: {
+            set_value: (doctype: string, name: string, fieldname: string, value: unknown) => Promise<unknown> | unknown;
+          };
+        };
+      };
+
+      const form = appWindow.cur_frm;
+      const setValue = appWindow.frappe?.model?.set_value;
+
+      if (!form || !setValue) {
+        throw new Error('ERPNext form context is not available for Sales Order mutation.');
+      }
+
+      if (!form.doc.items?.length) {
+        form.add_child?.('items');
+        form.refresh_field('items');
+      }
+
+      const firstItem = form.doc.items?.[0];
+      if (!firstItem) {
+        throw new Error('Unable to create the first Sales Order item row.');
+      }
+
+      if (nextItem.itemCode !== undefined) {
+        await setValue(firstItem.doctype, firstItem.name, 'item_code', nextItem.itemCode);
+      }
+
+      if (nextItem.deliveryDate !== undefined) {
+        const [day, month, year] = nextItem.deliveryDate.split('-');
+        const normalizedDeliveryDate =
+          day && month && year ? `${year}-${month}-${day}` : nextItem.deliveryDate;
+
+        await setValue(firstItem.doctype, firstItem.name, 'delivery_date', normalizedDeliveryDate);
+      }
+
+      if (nextItem.qty !== undefined) {
+        await setValue(firstItem.doctype, firstItem.name, 'qty', nextItem.qty);
+      }
+
+      if (nextItem.warehouse !== undefined) {
+        await setValue(firstItem.doctype, firstItem.name, 'warehouse', nextItem.warehouse);
+      }
+
+      if (nextItem.rate !== undefined) {
+        await setValue(firstItem.doctype, firstItem.name, 'rate', nextItem.rate);
+      }
+
+      form.refresh_field('items');
+      form.dirty();
+    }, data);
+
+    await this.page.waitForTimeout(500);
   }
 }

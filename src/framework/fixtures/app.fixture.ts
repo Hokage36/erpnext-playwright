@@ -8,7 +8,9 @@ import { ErpDocumentPage } from '../pages/erp-document.page';
 import { LoginPage } from '../pages/login.page';
 import { CustomerPage } from '../pages/selling/customer.page';
 import { DeliveryNotePage } from '../pages/selling/delivery-note.page';
+import { PaymentEntryPage } from '../pages/selling/payment-entry.page';
 import { QuotationPage } from '../pages/selling/quotation.page';
+import { SalesInvoicePage } from '../pages/selling/sales-invoice.page';
 import { SalesOrderPage } from '../pages/selling/sales-order.page';
 import { SalesPartnerPage } from '../pages/selling/sales-partner.page';
 import { ItemPage } from '../pages/stock/item.page';
@@ -23,6 +25,8 @@ type AppFixtures = {
   quotationPage: QuotationPage;
   salesOrderPage: SalesOrderPage;
   deliveryNotePage: DeliveryNotePage;
+  salesInvoicePage: SalesInvoicePage;
+  paymentEntryPage: PaymentEntryPage;
   requestForQuotationPage: RequestForQuotationPage;
   supplierPage: SupplierPage;
   supplierQuotationPage: SupplierQuotationPage;
@@ -52,6 +56,12 @@ export const test = base.extend<AppFixtures>({
   },
   deliveryNotePage: async ({ page }, use) => {
     await use(new DeliveryNotePage(page));
+  },
+  salesInvoicePage: async ({ page }, use) => {
+    await use(new SalesInvoicePage(page));
+  },
+  paymentEntryPage: async ({ page }, use) => {
+    await use(new PaymentEntryPage(page));
   },
   requestForQuotationPage: async ({ page }, use) => {
     await use(new RequestForQuotationPage(page));

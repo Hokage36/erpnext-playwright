@@ -13,7 +13,7 @@ export const masterData = {
   stockEntryType: 'Material Receipt',
   defaultQuantity: '1',
   stockReconciliationQuantity: '5',
-  stockReconciliationPurpose: 'Ki\u1ec3m k\u00ea, ch\u1ed1t kho',
+  stockReconciliationPurpose: 'Kiểm kê, chốt kho',
   valuationRate: '100000',
   salesPartnerCommissionRate: '12',
 } as const;
@@ -26,10 +26,26 @@ const commonQuantityInvalidValues = {
 } as const;
 
 const commonNegativeRate = '-1000';
+const commonNegativeReturnDecimalQuantity = '-0,5';
+
+export const sellingInvalidValues = {
+  ...commonQuantityInvalidValues,
+  negativeCommissionRate: '-1',
+  negativeReturnDecimalQuantity: commonNegativeReturnDecimalQuantity,
+  negativeRate: commonNegativeRate,
+} as const;
 
 export const stockInvalidValues = {
   ...commonQuantityInvalidValues,
   negativeValuationRate: commonNegativeRate,
+} as const;
+
+export const sellingNewDocumentUrlPatterns = {
+  deliveryNote: /\/app\/delivery-note\/new-delivery-note/,
+  quotation: /\/app\/quotation\/new-quotation/,
+  salesInvoice: /\/app\/sales-invoice\/new-sales-invoice/,
+  salesOrder: /\/app\/sales-order\/new-sales-order/,
+  salesPartner: /\/app\/sales-partner\/new-sales-partner/,
 } as const;
 
 export const stockNewDocumentUrlPatterns = {
