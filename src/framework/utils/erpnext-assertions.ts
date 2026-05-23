@@ -307,6 +307,50 @@ export async function expectPurchaseReceiptSubmitted(
   });
 }
 
+export async function expectPurchaseReturnSubmitted(
+  page: Page,
+  options: {
+    expectedQty: number | string;
+    itemCode: string;
+    originalPurchaseReceiptName: string;
+    purchaseReturnName: string;
+    warehouseName: string;
+  }
+): Promise<void> {
+  const purchaseReturn = await waitForSubmittedDocument<SubmittedBuyingDocument>(
+    page,
+    'Purchase Receipt',
+    options.purchaseReturnName
+  );
+
+  expectReturnFlag(purchaseReturn.is_return);
+  expect(purchaseReturn.return_against).toBe(options.originalPurchaseReceiptName);
+  expect(
+    purchaseReturn.items.some(
+      (item) =>
+        item.item_code === options.itemCode &&
+        item.warehouse === options.warehouseName &&
+        toNumber(item.qty) === -toNumber(options.expectedQty)
+    )
+  ).toBeTruthy();
+
+  await expectVoucherStockLedgerTotalQty(page, {
+    expectedQty: -toNumber(options.expectedQty),
+    itemCode: options.itemCode,
+    voucherNo: options.purchaseReturnName,
+    voucherType: 'Purchase Receipt',
+    warehouse: options.warehouseName,
+  });
+
+  const originalPurchaseReceipt = await waitForResource<SubmittedBuyingDocument>(
+    page,
+    'Purchase Receipt',
+    options.originalPurchaseReceiptName
+  );
+
+  expect(originalPurchaseReceipt.name).toBe(options.originalPurchaseReceiptName);
+}
+
 export async function expectPurchaseInvoiceSubmitted(
   page: Page,
   options: {

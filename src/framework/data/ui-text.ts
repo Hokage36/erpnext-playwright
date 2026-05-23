@@ -24,6 +24,7 @@ export const uiText = {
     purchaseInvoice: 'Hóa đơn mua hàng',
   },
   createMenuPattern: {
+    purchaseReturn: /purchase return|purchase.*return|mua.*(quay lại|trở lại)|quay lại mua|trở lại mua|return|trả hàng/i,
     salesReturn: /sales return|sales.*return|bán.*(quay lại|trở lại)|quay lại bán|trở lại bán|return|trả hàng/i,
   },
   stock: {

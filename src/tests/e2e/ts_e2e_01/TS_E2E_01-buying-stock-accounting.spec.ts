@@ -1,5 +1,4 @@
 import { masterData } from '../../../framework/data/master-data';
-import { uiText } from '../../../framework/data/ui-text';
 import { test } from '../../../framework/fixtures/app.fixture';
 import {
   expectPurchaseInvoiceSubmitted,
@@ -8,7 +7,12 @@ import {
 } from '../../../framework/utils/erpnext-assertions';
 import { tomorrowErpDate } from '../../../framework/utils/date';
 
-test('TS_E2E_01-Buying-Stock-Accounting', async ({ purchaseOrderPage, documentPage, page }) => {
+test('TS_E2E_01-Buying-Stock-Accounting', async ({
+  purchaseOrderPage,
+  purchaseInvoicePage,
+  page,
+  purchaseReceiptPage,
+}) => {
   await purchaseOrderPage.createPurchaseOrder({
     supplierName: masterData.supplierName,
     itemCode: masterData.itemCode,
@@ -19,17 +23,17 @@ test('TS_E2E_01-Buying-Stock-Accounting', async ({ purchaseOrderPage, documentPa
     scheduleDate: tomorrowErpDate(),
   });
 
-  const purchaseOrderName = documentPage.currentDocumentName();
+  const purchaseOrderName = purchaseOrderPage.currentDocumentName();
   await expectPurchaseOrderSubmitted(page, {
     purchaseOrderName,
     supplierName: masterData.supplierName,
   });
 
-  await documentPage.openCreateMenuItem(uiText.createMenu.purchaseReceipt);
-  await documentPage.saveAndSubmit();
-  await documentPage.dismissMessageDialogIfPresent();
+  await purchaseReceiptPage.openFromPurchaseOrder();
+  await purchaseReceiptPage.saveAndSubmit();
+  await purchaseReceiptPage.dismissMessageDialogIfPresent();
 
-  const purchaseReceiptName = documentPage.currentDocumentName();
+  const purchaseReceiptName = purchaseReceiptPage.currentDocumentName();
   await expectPurchaseReceiptSubmitted(page, {
     expectedQty: masterData.defaultQuantity,
     itemCode: masterData.itemCode,
@@ -38,10 +42,10 @@ test('TS_E2E_01-Buying-Stock-Accounting', async ({ purchaseOrderPage, documentPa
     warehouseName: masterData.warehouseName,
   });
 
-  await documentPage.openCreateMenuItem(uiText.createMenu.purchaseInvoice);
-  await documentPage.saveAndSubmit();
+  await purchaseInvoicePage.openFromPurchaseReceipt();
+  await purchaseInvoicePage.saveAndSubmit();
 
-  const purchaseInvoiceName = documentPage.currentDocumentName();
+  const purchaseInvoiceName = purchaseInvoicePage.currentDocumentName();
   await expectPurchaseInvoiceSubmitted(page, {
     itemCode: masterData.itemCode,
     purchaseInvoiceName,

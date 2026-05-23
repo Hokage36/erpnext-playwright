@@ -1,7 +1,10 @@
+import { Page } from '@playwright/test';
+
 import { masterData } from '../data/master-data';
 import { PurchaseInvoicePage } from '../pages/buying/purchase-invoice.page';
 import { PurchaseOrderPage } from '../pages/buying/purchase-order.page';
 import { PurchaseReceiptPage } from '../pages/buying/purchase-receipt.page';
+import { PurchaseReturnPage } from '../pages/buying/purchase-return.page';
 import { RequestForQuotationPage } from '../pages/buying/request-for-quotation.page';
 import { SupplierQuotationPage } from '../pages/buying/supplier-quotation.page';
 import { tomorrowErpDate } from '../utils/date';
@@ -78,4 +81,33 @@ export async function openPurchaseInvoiceDraftFromPurchaseOrder(options: {
   await options.purchaseReceiptPage.saveAndSubmit();
   await options.purchaseReceiptPage.dismissMessageDialogIfPresent();
   await options.purchaseInvoicePage.openFromPurchaseReceipt();
+}
+
+export async function openPurchaseReturnDraftFromPurchaseReceipt(options: {
+  page: Page;
+  purchaseOrderPage: PurchaseOrderPage;
+  purchaseReceiptPage: PurchaseReceiptPage;
+  purchaseReturnPage: PurchaseReturnPage;
+  quantity?: string;
+}): Promise<{ originalPurchaseReceiptName: string }> {
+  await openPurchaseReceiptDraftFromPurchaseOrder(options);
+  await options.page.waitForURL(/\/app\/purchase-receipt\//, { timeout: 15000 });
+  await options.purchaseReceiptPage.saveAndSubmit();
+  await options.purchaseReceiptPage.dismissMessageDialogIfPresent();
+  await options.page.waitForFunction(() => {
+    const appWindow = window as typeof window & {
+      cur_frm?: {
+        doc?: {
+          docstatus?: number;
+        };
+      };
+    };
+
+    return appWindow.cur_frm?.doc?.docstatus === 1;
+  });
+
+  const originalPurchaseReceiptName = options.purchaseReceiptPage.currentDocumentName();
+  await options.purchaseReturnPage.openFromSubmittedPurchaseReceipt(originalPurchaseReceiptName);
+
+  return { originalPurchaseReceiptName };
 }
