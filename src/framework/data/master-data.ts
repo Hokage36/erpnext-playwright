@@ -13,8 +13,31 @@ export const masterData = {
   stockEntryType: 'Material Receipt',
   defaultQuantity: '1',
   stockReconciliationQuantity: '5',
+  stockReconciliationPurpose: 'Ki\u1ec3m k\u00ea, ch\u1ed1t kho',
   valuationRate: '100000',
   salesPartnerCommissionRate: '12',
+} as const;
+
+const commonQuantityInvalidValues = {
+  decimalQuantity: '0,5',
+  negativeQuantity: '-1',
+  nonNumericQuantity: 'abc',
+  zeroQuantity: '0',
+} as const;
+
+const commonNegativeRate = '-1000';
+
+export const stockInvalidValues = {
+  ...commonQuantityInvalidValues,
+  negativeValuationRate: commonNegativeRate,
+} as const;
+
+export const stockNewDocumentUrlPatterns = {
+  deliveryNote: /\/app\/delivery-note\/new-delivery-note/,
+  item: /\/app\/item\/new-item/,
+  stockEntry: /\/app\/stock-entry\/new-stock-entry/,
+  stockReconciliation: /\/app\/stock-reconciliation\/new-stock-reconciliation/,
+  warehouse: /\/app\/warehouse\/new-warehouse/,
 } as const;
 
 export function buildUniqueCustomerName(): string {

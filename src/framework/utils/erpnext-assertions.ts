@@ -21,6 +21,17 @@ type SupplierDocument = {
   supplier_name?: string;
 };
 
+type ItemDocument = {
+  item_code?: string;
+  item_group?: string;
+  item_name?: string;
+  stock_uom?: string;
+};
+
+type WarehouseDocument = {
+  warehouse_name?: string;
+};
+
 type BuyingLineItem = {
   against_purchase_order?: string;
   item_code?: string;
@@ -203,6 +214,35 @@ export async function expectSupplierCreated(
 
   expect(supplier.supplier_name).toBe(options.supplierName);
   expect(supplier.country).toBe(options.country);
+}
+
+export async function expectItemCreated(
+  page: Page,
+  options: {
+    itemCode: string;
+    itemGroup: string;
+    itemName: string;
+    stockUom: string;
+  }
+): Promise<void> {
+  const item = await waitForResource<ItemDocument>(page, 'Item', options.itemCode);
+
+  expect(item.item_code).toBe(options.itemCode);
+  expect(item.item_name).toBe(options.itemName);
+  expect(item.item_group).toBe(options.itemGroup);
+  expect(item.stock_uom).toBe(options.stockUom);
+}
+
+export async function expectWarehouseCreated(
+  page: Page,
+  options: {
+    warehouseDocumentName: string;
+    warehouseName: string;
+  }
+): Promise<void> {
+  const warehouse = await waitForResource<WarehouseDocument>(page, 'Warehouse', options.warehouseDocumentName);
+
+  expect(warehouse.warehouse_name).toBe(options.warehouseName);
 }
 
 export async function expectPurchaseOrderSubmitted(
