@@ -43,6 +43,9 @@ type BuyingLineItem = {
 
 type SubmittedBuyingDocument = SubmittedDocument & {
   items: BuyingLineItem[];
+  is_return?: number | boolean;
+  return_against?: string;
+  status?: string;
   supplier?: string;
 };
 
@@ -67,7 +70,10 @@ type SellingLineItem = {
 
 type SubmittedSellingDocument = SubmittedDocument & {
   customer?: string;
+  is_return?: number | boolean;
   items: SellingLineItem[];
+  return_against?: string;
+  status?: string;
 };
 
 type SellingInvoiceLineItem = {
@@ -109,6 +115,10 @@ type StockLedgerBalanceEntry = StockLedgerEntry & {
 // ERPNext tra ve kha nhieu gia tri so duoi dang string, nen helper nay gom logic ep kieu ve mot cho.
 function sumNumericField<T>(items: T[], selector: (item: T) => unknown): number {
   return items.reduce((sum, item) => sum + toNumber(selector(item)), 0);
+}
+
+function expectReturnFlag(value: number | boolean | undefined): void {
+  expect([true, 1]).toContain(value as boolean | number);
 }
 
 // Day la buoc chung de dam bao document da duoc submit truoc khi di vao assert nghiep vu cu the.
@@ -346,7 +356,7 @@ export async function expectDeliveryNoteSubmitted(
     deliveryNoteName: string;
     expectedQty: number | string;
     itemCode: string;
-    salesOrderName: string;
+    salesOrderName?: string;
     warehouseName: string;
   }
 ): Promise<void> {
@@ -358,7 +368,7 @@ export async function expectDeliveryNoteSubmitted(
       (item) =>
         item.item_code === options.itemCode &&
         item.warehouse === options.warehouseName &&
-        [item.sales_order, item.against_sales_order].includes(options.salesOrderName)
+        (!options.salesOrderName || [item.sales_order, item.against_sales_order].includes(options.salesOrderName))
     )
   ).toBeTruthy();
 
@@ -369,6 +379,46 @@ export async function expectDeliveryNoteSubmitted(
     voucherType: 'Delivery Note',
     warehouse: options.warehouseName,
   });
+}
+
+export async function expectSalesReturnSubmitted(
+  page: Page,
+  options: {
+    deliveryReturnName: string;
+    expectedQty: number | string;
+    itemCode: string;
+    originalDeliveryNoteName: string;
+    warehouseName: string;
+  }
+): Promise<void> {
+  const salesReturn = await waitForSubmittedDocument<SubmittedSellingDocument>(page, 'Delivery Note', options.deliveryReturnName);
+
+  expectReturnFlag(salesReturn.is_return);
+  expect(salesReturn.return_against).toBe(options.originalDeliveryNoteName);
+  expect(
+    salesReturn.items.some(
+      (item) =>
+        item.item_code === options.itemCode &&
+        item.warehouse === options.warehouseName &&
+        toNumber(item.qty) === -toNumber(options.expectedQty)
+    )
+  ).toBeTruthy();
+
+  await expectVoucherStockLedgerTotalQty(page, {
+    expectedQty: toNumber(options.expectedQty),
+    itemCode: options.itemCode,
+    voucherNo: options.deliveryReturnName,
+    voucherType: 'Delivery Note',
+    warehouse: options.warehouseName,
+  });
+
+  const originalDeliveryNote = await waitForResource<SubmittedSellingDocument>(
+    page,
+    'Delivery Note',
+    options.originalDeliveryNoteName
+  );
+
+  expect(originalDeliveryNote.name).toBe(options.originalDeliveryNoteName);
 }
 
 export async function expectSalesInvoiceSubmitted(

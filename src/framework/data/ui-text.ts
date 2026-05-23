@@ -23,6 +23,9 @@ export const uiText = {
     purchaseReceipt: 'Biên lai nhận hàng',
     purchaseInvoice: 'Hóa đơn mua hàng',
   },
+  createMenuPattern: {
+    salesReturn: /sales return|sales.*return|bán.*(quay lại|trở lại)|quay lại bán|trở lại bán|return|trả hàng/i,
+  },
   stock: {
     stockReconciliationPurpose: 'Kiểm kê, chốt kho',
   },

@@ -5,6 +5,7 @@ import { DeliveryNotePage } from '../pages/selling/delivery-note.page';
 import { SalesInvoicePage } from '../pages/selling/sales-invoice.page';
 import { QuotationPage } from '../pages/selling/quotation.page';
 import { SalesOrderPage } from '../pages/selling/sales-order.page';
+import { SalesReturnPage } from '../pages/selling/sales-return.page';
 import { StockEntryPage } from '../pages/stock/stock-entry.page';
 import { tomorrowErpDate } from '../utils/date';
 
@@ -32,7 +33,7 @@ export async function openDeliveryNoteDraftFromSalesOrder(options: {
 }
 
 export async function openQuotationDraft(options: {
-  page?: Page;
+  page: Page;
   quotationPage: QuotationPage;
 }): Promise<void> {
   await options.quotationPage.fillQuotationForm({
@@ -42,10 +43,7 @@ export async function openQuotationDraft(options: {
     warehouseName: masterData.warehouseName,
   });
 
-  if (options.page) {
-    await options.page.waitForURL(/\/app\/quotation\//, { timeout: 15000 });
-  }
-
+  await options.page.waitForURL(/\/app\/quotation\//, { timeout: 15000 });
   await options.quotationPage.saveUntilSaved(/\/app\/quotation\/(?!new-quotation-)/);
 }
 
@@ -85,4 +83,32 @@ export async function openSalesInvoiceDraftFromSalesOrder(options: {
   await options.salesInvoicePage.openFromDeliveryNote();
   await options.page.waitForURL(/\/app\/sales-invoice\//, { timeout: 15000 });
   await options.salesInvoicePage.saveUntilSaved(/\/app\/sales-invoice\/(?!new-sales-invoice-)/);
+}
+
+export async function openSalesReturnDraftFromDeliveryNote(options: {
+  deliveryNotePage: DeliveryNotePage;
+  page: Page;
+  salesOrderPage: SalesOrderPage;
+  salesReturnPage: SalesReturnPage;
+  quantity?: string;
+}): Promise<{ originalDeliveryNoteName: string }> {
+  await openDeliveryNoteDraftFromSalesOrder(options);
+  await options.deliveryNotePage.submit();
+  await options.deliveryNotePage.dismissMessageDialogIfPresent();
+  await options.page.waitForFunction(() => {
+    const appWindow = window as typeof window & {
+      cur_frm?: {
+        doc?: {
+          docstatus?: number;
+        };
+      };
+    };
+
+    return appWindow.cur_frm?.doc?.docstatus === 1;
+  });
+
+  const originalDeliveryNoteName = options.deliveryNotePage.currentDocumentName();
+  await options.salesReturnPage.openFromSubmittedDeliveryNote(originalDeliveryNoteName);
+
+  return { originalDeliveryNoteName };
 }

@@ -13,6 +13,7 @@ import { QuotationPage } from '../pages/selling/quotation.page';
 import { SalesInvoicePage } from '../pages/selling/sales-invoice.page';
 import { SalesOrderPage } from '../pages/selling/sales-order.page';
 import { SalesPartnerPage } from '../pages/selling/sales-partner.page';
+import { SalesReturnPage } from '../pages/selling/sales-return.page';
 import { ItemPage } from '../pages/stock/item.page';
 import { StockEntryPage } from '../pages/stock/stock-entry.page';
 import { StockReconciliationPage } from '../pages/stock/stock-reconciliation.page';
@@ -27,6 +28,7 @@ type AppFixtures = {
   deliveryNotePage: DeliveryNotePage;
   salesInvoicePage: SalesInvoicePage;
   paymentEntryPage: PaymentEntryPage;
+  salesReturnPage: SalesReturnPage;
   requestForQuotationPage: RequestForQuotationPage;
   supplierPage: SupplierPage;
   supplierQuotationPage: SupplierQuotationPage;
@@ -62,6 +64,9 @@ export const test = base.extend<AppFixtures>({
   },
   paymentEntryPage: async ({ page }, use) => {
     await use(new PaymentEntryPage(page));
+  },
+  salesReturnPage: async ({ page }, use) => {
+    await use(new SalesReturnPage(page));
   },
   requestForQuotationPage: async ({ page }, use) => {
     await use(new RequestForQuotationPage(page));
