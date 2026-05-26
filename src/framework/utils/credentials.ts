@@ -6,8 +6,10 @@ export type Credentials = {
   password?: string;
 };
 
-export const authStateFile = path.join(__dirname, '../../playwright/.auth/user.json');
-export const localCredentialsFile = path.join(__dirname, '../../playwright/.auth/local.credentials.json');
+const authDirectory = path.resolve(__dirname, '../../../.auth');
+
+export const authStateFile = path.join(authDirectory, 'user.json');
+export const localCredentialsFile = path.join(authDirectory, 'local.credentials.json');
 
 function loadLocalCredentials(): Credentials {
   if (!fs.existsSync(localCredentialsFile)) {

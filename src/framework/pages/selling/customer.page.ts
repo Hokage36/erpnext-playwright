@@ -17,7 +17,7 @@ export class CustomerPage extends BasePage {
   }
 
   async openCreateCustomerDialog(): Promise<void> {
-    const addCustomerButton = this.page.getByRole('button', { name: /khĂ¡ch hĂ ng/i }).first();
+    const addCustomerButton = this.page.getByRole('button', { name: /Kh\u00e1ch H\u00e0ng/i }).first();
 
     await expect(addCustomerButton).toBeVisible({ timeout: 15000 });
     await expect(addCustomerButton).toBeEnabled();

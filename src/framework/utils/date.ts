@@ -12,3 +12,10 @@ export function tomorrowErpDate(): string {
 
   return formatErpDate(tomorrow);
 }
+
+export function yesterdayErpDate(): string {
+  const yesterday = new Date();
+  yesterday.setDate(yesterday.getDate() - 1);
+
+  return formatErpDate(yesterday);
+}
