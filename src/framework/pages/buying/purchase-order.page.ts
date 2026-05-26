@@ -109,7 +109,7 @@ export class PurchaseOrderPage extends ErpDocumentPage {
     await this.saveAndSubmit();
   }
 
-  private async dismissMaterialRequestDialogIfPresent(): Promise<void> {
+  async dismissMaterialRequestDialogIfPresent(): Promise<void> {
     const materialRequestDialog = this.page
       .getByRole('dialog')
       .filter({ hasText: uiText.dialogs.materialRequest });
