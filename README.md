@@ -1,15 +1,16 @@
 # ERPNext Playwright
 
-Bo test nay da duoc cau hinh de chay CI/CD bang GitHub Actions voi moi truong dich:
+Bộ test này đã được cấu hình để chạy CI/CD bằng
+GitHub Actions với môi trường đích:
 
-- `https://erpnext.sangttx.xyz`
+- `https://erpnext.sangttx36.online`
 
 ## Workflow da them
 
-- CI tu dong khi `push` len `main`/`master`
-- CI tu dong khi mo `pull_request` vao `main`/`master`
-- Chay tay bang `workflow_dispatch`
-- Deploy `playwright-report` len GitHub Pages sau khi merge vao `main` hoac `master`
+- CI tự động khi `push` lên `main`
+- CI tự động khi mở `pull_request` vào `main`
+- Chạy tay bằng `workflow_dispatch`
+- Deploy `playwright-report` lên GitHub Pages sau khi merge vào `main` 
 
 ## GitHub secrets can tao
 
@@ -18,27 +19,14 @@ Bo test nay da duoc cau hinh de chay CI/CD bang GitHub Actions voi moi truong di
 
 ## Cach chay local
 
-Bo test uu tien bien moi truong tren CI, va tu dong fallback sang file local tren may ca nhan:
+Bộ test ưu tiên biến môi trường trên CI, và tự động fallback sang file local trên máy tính cá nhân:
 
 - `.auth/local.credentials.json`
-
-Noi dung file:
-
-```json
-{
-  "username": "Administrator",
-  "password": "admin"
-}
-```
-
-Thu muc `.auth/` da duoc ignore, nen file nay se khong bi commit.
-
-Neu muon, ban van co the ghi de bang bien moi truong trong terminal.
 
 PowerShell:
 
 ```powershell
-$env:BASE_URL = 'https://erpnext.sangttx.xyz'
+$env:BASE_URL = 'https://erpnext.sangttx36.online'
 $env:ERP_USERNAME = 'your-user'
 $env:ERP_PASSWORD = 'your-password'
 npm ci
@@ -46,32 +34,26 @@ npx playwright install chromium
 npm run test:e2e
 ```
 
-Neu da tao `.auth/local.credentials.json`, co the bo qua 2 dong `ERP_USERNAME` va `ERP_PASSWORD`:
+Nếu đã tạo `.auth/local.credentials.json`, có thể bỏ qua 2 dòng `ERP_USERNAME` va `ERP_PASSWORD`:
 
 ```powershell
-$env:BASE_URL = 'https://erpnext.sangttx.xyz'
+$env:BASE_URL = 'https://erpnext.sangttx36.online'
 npm ci
 npx playwright install chromium
-npx playwright test src/tests/selling/tc_selling_04/TC_SELLING_04_01-create_sales_order.spec.ts --project=chromium
+npx playwright test --project=chromium
 ```
 
 ## Xem trace khi fail
 
-- Chay test binh thuong: `npm run test:e2e`
-- Local da duoc cau hinh `trace: retain-on-failure`, nen test fail se giu lai `trace.zip` trong `test-results/`
-- Mo HTML report: `npm run test:e2e:report`
-- Tu HTML report, chon test fail va bam link `Trace` de mo Trace Viewer
-- Neu muon mo truc tiep file trace: `npm run test:e2e:trace -- test-results/<test-folder>/trace.zip`
+- Chạy test bình thường: `npm run test:e2e`
+- Local đã được cấu hình `trace: retain-on-failure`, nên test fail sẽ giữ lại `trace.zip` trong `test-results/`
+- Mở HTML report: `npm run test:e2e:report`
+- Từ HTML report, chọn test fail và bấm vào link `Trace` để mở Trace Viewer
+- Nếu muốn mở trực tiếp file trace: `npm run test:e2e:trace -- test-results/<test-folder>/trace.zip`
 
 ## GitHub repo setup
 
-1. Push cac thay doi nay len repo `Hokage36/erpnext-playwright`.
-2. Vao `Settings -> Secrets and variables -> Actions` va tao `ERP_USERNAME`, `ERP_PASSWORD`.
-3. Vao `Settings -> Pages` va chon `GitHub Actions` lam publishing source.
+1. Push các thay đổi này lên `Hokage36/erpnext-playwright`.
+2. Vào `Settings -> Secrets and variables -> Actions` va tạo `ERP_USERNAME`, `ERP_PASSWORD`.
+3. Vào `Settings -> Pages` và chọn `GitHub Actions` làm publishing source.
 
-## Ghi chu
-
-- Dang nhap hien duoc tao dong trong `src/setup/auth.setup.ts`, khong con dung file session commit san.
-- CI chi chay `chromium` de tranh tao du lieu lap lai tren moi truong ERPNext that.
-- Bao cao HTML van duoc upload artifact cho moi lan chay, ke ca khi test fail.
-- O local, trace se duoc giu lai khi test fail de debug bang Trace Viewer.
